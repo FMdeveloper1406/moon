@@ -1,35 +1,56 @@
 ---
+import type { GetStaticPaths } from "astro";
 import Layout from '@/layouts/Layout.astro';
 import Moon from '@/components/Moon.astro';
 import { getMoonData } from '@/services/moonApi';
 
-const moonData = await getMoonData({
-	month: new Date().getMonth() + 1,
-	year: new Date().getFullYear(),
-})
+const yearMonthDay = (Astro.params as any).yearMonthDay;
 
-const todayMoon = moonData.phase[new Date().getDate()];
+const [year, month, day] = yearMonthDay?.split('-').map(Number) || [new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()];
+
+const moonData = await getMoonData({ year, month })
+
+const todayMoon = moonData.phase[String(day)];
+
+const date = new Date(year, month - 1, day);
 
 const phaseLimits = Object.entries(moonData.phase).filter(
 	([monthDay, phase]) => ['New Moon', 'First quarter', 'Full moon', 'Last quarter'].includes((phase as any).phaseName)
 );
+
+export const getStaticPaths = (() => {
+	const year = new Date().getFullYear();
+
+	const paths = Array.from({ length: 12 }, (_, i) => {
+		const month = i + 1;
+		return Array.from({ length: 31 }, (_, i) => {
+			const day = i + 1;
+			return {
+				params: {
+					yearMonthDay: `${year}-${month}-${day}`
+				}
+			}
+		});
+	}).flat();
+	return paths;
+}) satisfies GetStaticPaths;
 ---
 
-<Layout title="Welcome to Astro.">
-	<section class="w-full min-h-screen flex flex-col justify-center items-center">
+<Layout title="Moon for">
+	<section class="w-full min-h-screen flex flex-col justify-center items-center" transition:animate="fade">
 		<header class="absolute top-0 w-full left-0 justify-center flex">
-			<div class="flex justify-between px-4 py-3 max-w-[700px] w-full">
+			<div class="flex justify-between px-4 py-3 max-w-[1000px] w-full">
 				<h2 class="text-white text-2xl">
 					Magic Moon
 				</h2>
-				<a href="/month" class="text-white text-sm py-1 px-3 ring-white ring-1 rounded-md h-auto my-auto">
+				<a href={`/month/${year}-${month}`} class="text-white text-sm py-1 px-3 ring-white ring-1 rounded-md h-auto my-auto">
 					View month
 				</a>
 			</div>
 		</header>
 		<main class="w-full flex justify-center items-center flex-col">
 			<h2 class="text-white text-2xl">
-				{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short',})}
+				{date.toLocaleDateString('en-US', { day: 'numeric', month: 'short',})}
 			</h2>
 			<div class="w-3/5 max-w-[500px] relative" >
 				<Moon phaseName={todayMoon.phaseName} percentage={todayMoon.lighting} shadow={true} />
@@ -47,14 +68,16 @@ const phaseLimits = Object.entries(moonData.phase).filter(
 		<footer class="flex justify-center w-full">
 			<div class="grid grid-cols-4 gap-2 p-2 w-full max-w-[300px]">
 				{(phaseLimits as any[]).map(([monthDay, phase]: any) => (
-					<div class="ring-gray-500/30 ring-1 rounded text-white/40 flex flex-col justify-center items-center">
+					<a 
+						class="ring-gray-500/30 ring-1 rounded text-white/40 flex flex-col justify-center items-center"
+						href={`/day/${year}-${month}-${monthDay}`}>
 						<div class="w-4/5 max-w-[500px]" >
 							<Moon phaseName={phase.phaseName} percentage={phase.lighting} />
 						</div>	
 						<span>
 							{monthDay}
 						</span>
-					</div>
+					</a>
 				))}
 			</div>
 		</footer>

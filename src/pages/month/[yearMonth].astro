@@ -1,0 +1,96 @@
+---
+import type { GetStaticPaths } from "astro";
+import Layout from '@/layouts/Layout.astro';
+import Moon from '@/components/Moon.astro';
+import { getMoonData } from '@/services/moonApi';
+
+const yearMonth = (Astro.params as any).yearMonth;
+
+const [year, month] = yearMonth?.split('-').map(Number) || [new Date().getFullYear(), new Date().getMonth() + 1];
+
+const moonData = await getMoonData({ year, month });
+
+const nextMonth = month === 12 ? 1 : month + 1;
+const previousMonth = month === 1 ? 12 : month - 1;
+
+const nextMonthName = moonData.nameMonth[nextMonth - 1];
+const previousMonthName = moonData.nameMonth[previousMonth - 1];
+
+export const getStaticPaths = (() => {
+	const year = new Date().getFullYear();
+
+	const paths = Array.from({ length: 12 }, (_, i) => {
+		const month = i + 1;
+		return { params: {
+			yearMonth: `${year}-${month}`
+		}};
+	}).flat();
+
+	return paths;
+}) satisfies GetStaticPaths;
+---
+
+<Layout title="Welcome to Astro.">
+	<section class="w-full h-screen flex justify-center items-center flex-col" transition:animate="fade">
+	<header class="absolute top-0 w-full left-0 justify-center flex">
+		<div class="flex justify-between px-4 py-3 max-w-[1000px] w-full">
+			<h2 class="text-white text-2xl">
+				Magic Moon
+			</h2>
+		</div>
+	</header>
+
+		<div class="grid grid-cols-7 w-3/5 max-w-[900px] gap-4">
+			{moonData.nameDay.map((day: string) => (
+				<div class="text-gray-400 text-center">
+					{day.slice(0, 3)}
+				</div>
+			))}
+			{Object.entries(moonData.phase).map(([dayNumber, phase]) => (
+				<a 
+					style={Number(dayNumber) == 1 ? `grid-column-start:${(phase as any).dayWeek + 1}` : ''}
+					class="rounded-lg px-1 py-2 flex flex-col justify-center items-center relative overflow-hidden ring-gray-800 ring-1"
+					href={`/day/${year}-${month}-${dayNumber}`}
+				>
+					<div class="w-full flex justify-end mr-4 -mb-1">
+						<span class="text-white font-bold text-lg">
+							{dayNumber}
+						</span>
+					</div>
+					<div class="w-3/4 relative" >
+						<Moon phaseName={(phase as any).phaseName} percentage={(phase as any).lighting} />
+					</div>
+				</a>
+			))}
+		</div>
+
+		<div class="flex justify-around w-full max-w-[900px] items-center mt-10">
+			<a href={`/month/${year}-${previousMonth}`} class="text-gray-500 text-2xl transition-all hover:text-3xl duration-500">
+				{previousMonthName} {year}
+			</a>
+			<h1 class="text-white text-6xl z-10">
+				{moonData.monthName} {year}
+			</h1>
+			<a href={`/month/${year}-${nextMonth}`} class="text-gray-500 text-2xl transition-all hover:text-3xl duration-500">
+				{nextMonthName} {year}
+			</a>
+		</div>
+	</section>
+</Layout>
+
+<style>
+
+body {
+	background-image: url('https://images.unsplash.com/photo-1621198777376-d776b7725a93?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+	background-repeat: repeat;
+	background-size: 1200px;
+	background-position: 0%;
+	animation: animation 120s infinite linear;
+}
+
+@keyframes animation {
+  to {
+    background-position: 465%;
+  }
+}
+</style>
