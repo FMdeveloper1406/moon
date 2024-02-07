@@ -23,7 +23,9 @@ export const getStaticPaths = (() => {
 
 	const paths = Array.from({ length: 12 }, (_, i) => {
 		const month = i + 1;
-		return Array.from({ length: 31 }, (_, i) => {
+		const daysInMonth = new Date(year, month, 0).getDate();
+
+		return Array.from({ length: daysInMonth }, (_, i) => {
 			const day = i + 1;
 			return {
 				params: {
