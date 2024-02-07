@@ -1,80 +1,18 @@
 ---
-import Layout from '@/layouts/Layout.astro';
-import Moon from '@/components/Moon.astro';
-import { getMoonData } from '@/services/moonApi';
 
-const moonData = await getMoonData({
-	month: new Date().getMonth() + 1,
-	year: new Date().getFullYear(),
-})
-
-const todayMoon = moonData.phase[new Date().getDate()];
-
-const phaseLimits = Object.entries(moonData.phase).filter(
-	([monthDay, phase]) => ['New Moon', 'First quarter', 'Full moon', 'Last quarter'].includes((phase as any).phaseName)
-);
 ---
 
-<Layout title="Welcome to Astro.">
-	<section class="w-full min-h-screen flex flex-col justify-center items-center">
-		<header class="absolute top-0 w-full left-0 justify-center flex">
-			<div class="flex justify-between px-4 py-3 max-w-[700px] w-full">
-				<h2 class="text-white text-2xl">
-					Magic Moon
-				</h2>
-				<a href="/month" class="text-white text-sm py-1 px-3 ring-white ring-1 rounded-md h-auto my-auto">
-					View month
-				</a>
-			</div>
-		</header>
-		<main class="w-full flex justify-center items-center flex-col">
-			<h2 class="text-white text-2xl">
-				{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short',})}
-			</h2>
-			<div class="w-3/5 max-w-[500px] relative" >
-				<Moon phaseName={todayMoon.phaseName} percentage={todayMoon.lighting} shadow={true} />
-			</div>	
-			<h1 class="text-white text-4xl my-5">
-				{todayMoon.phaseName}
-				<span class="text-xl text-gray-500">
-					| {Math.floor(todayMoon.lighting)}%
-				</span>
-			</h1>
-			<h2>
-
-			</h2>
-		</main>
-		<footer class="flex justify-center w-full">
-			<div class="grid grid-cols-4 gap-2 p-2 w-full max-w-[300px]">
-				{(phaseLimits as any[]).map(([monthDay, phase]: any) => (
-					<div class="ring-gray-500/30 ring-1 rounded text-white/40 flex flex-col justify-center items-center">
-						<div class="w-4/5 max-w-[500px]" >
-							<Moon phaseName={phase.phaseName} percentage={phase.lighting} />
-						</div>	
-						<span>
-							{monthDay}
-						</span>
-					</div>
-				))}
-			</div>
-		</footer>
-
-	</section>
-</Layout>
-
-<style>
-
-body {
-	background-image: url('https://images.unsplash.com/photo-1621198777376-d776b7725a93?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-	background-repeat: repeat;
-	background-size: 1200px;
-	background-position: 0%;
-	animation: animation 120s infinite linear;
-}
-
-@keyframes animation {
-  to {
-    background-position: 1200px;
-  }
-}
-</style>
+<!doctype html>
+<html lang="en">
+	<head>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<script type="text/javascript">
+			const today = new Date();
+            window.location.href = `/day/${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`
+		</script>
+		<title>Magic Moon</title>
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>
