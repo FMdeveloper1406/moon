@@ -3,15 +3,22 @@ interface Props {
     phaseName: string;
     percentage: number;
     shadow?: boolean;
+    animate?: boolean;
 }
 
-const { phaseName, percentage, shadow } = Astro.props;
+const { phaseName, percentage, shadow, animate } = Astro.props;
 
 const isWaning = ['Waning', 'Last quarter', 'New Moon'].includes(phaseName);
 const percentageToRender = ['New Moon', 'Full moon'].includes(phaseName) ? 50 : Math.floor(Number(percentage) - 50) * 0.84 + (0.16);
 ---
 <figure class="relative p-[10%] overflow-hidden w-full aspect-square stage">
-    <div id="moon" class="m-auto flex justify-center items-center" style={shadow ? 'box-shadow: 0px 0px .2em .1em #ffffff33;': ''}>
+    <div 
+      id="moon" 
+      class="m-auto flex justify-center items-center" 
+      style=`
+        ${shadow ? 'box-shadow: 0px 0px .2em .1em #ffffff33;' : ''}
+        ${animate ? 'animation: move-map 60s infinite linear;' : 'background-position-x: 60%'}
+      `>
     </div>
     <div id="moon-shape"
         class:list={[
@@ -46,7 +53,6 @@ const percentageToRender = ['New Moon', 'Full moon'].includes(phaseName) ? 50 : 
     background-position-y: center;
     background-size: 250% auto;
     border-radius: 50%;
-    animation: move-map 60s infinite linear;
     transform: rotate(170deg);
 }
 
