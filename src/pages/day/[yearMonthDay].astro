@@ -19,9 +19,9 @@ const phaseLimits = Object.entries(moonData.phase).filter(
 );
 
 export const getStaticPaths = (() => {
-	const year = new Date().getFullYear();
+	const years = [2023, 2024, 2025];
 
-	const paths = Array.from({ length: 12 }, (_, i) => {
+	const paths = years.map(year => Array.from({ length: 12 }, (_, i) => {
 		const month = i + 1;
 		const daysInMonth = new Date(year, month, 0).getDate();
 
@@ -33,13 +33,13 @@ export const getStaticPaths = (() => {
 				}
 			}
 		});
-	}).flat();
+	}).flat()).flat();
 	return paths;
 }) satisfies GetStaticPaths;
 ---
 
 <Layout title="Magic Moon">
-	<section class="w-full min-h-screen flex flex-col justify-center items-center" transition:animate="fade">
+	<section class="w-full h-[100dvh] flex flex-col justify-center items-center" transition:animate="fade">
 		<header class="absolute top-0 w-full left-0 justify-center flex">
 			<div class="flex justify-between px-4 py-3 max-w-[1000px] w-full">
 				<h2 class="text-white text-2xl">
@@ -73,11 +73,14 @@ export const getStaticPaths = (() => {
 					<a 
 						class="ring-gray-500/30 ring-1 rounded text-white/40 flex flex-col justify-center items-center"
 						href={`/day/${year}-${month}-${monthDay}`}>
+						<span>
+							{monthDay}
+						</span>
 						<div class="w-4/5 max-w-[500px]" >
 							<Moon phaseName={phase.phaseName} percentage={phase.lighting} />
 						</div>	
-						<span>
-							{monthDay}
+						<span class="text-center leading-4 capitalize mb-2 text-sm px-2">
+							{phase.phaseName}
 						</span>
 					</a>
 				))}
