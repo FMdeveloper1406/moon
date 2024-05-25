@@ -1,52 +1,72 @@
 ---
+import { PhaseName } from "@/utils/types.utils";
+
 interface Props {
-    phaseName: string;
-    percentage: number;
-    shadow?: boolean;
-    animate?: boolean;
+  phaseName: PhaseName;
+  percentage: number;
+  shadow?: boolean;
+  animate?: boolean;
 }
 
 const { phaseName, percentage, shadow, animate } = Astro.props;
 
-const isWaning = ['Waning', 'Last quarter', 'New Moon'].includes(phaseName);
-const percentageToRender = ['New Moon', 'Full moon'].includes(phaseName) ? 50 : Math.floor(Number(percentage) - 50) * 0.84 + (0.16);
+const isWaning = [
+  PhaseName.Waning,
+  PhaseName.LastQuarter,
+  PhaseName.NewMoon,
+].includes(phaseName);
+const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(
+  phaseName
+)
+  ? 50
+  : Math.floor(Number(percentage) - 50) * 0.84 + 0.16;
 ---
+
 <figure class="relative p-[10%] overflow-hidden w-full aspect-square stage">
-    <div 
-      id="moon" 
-      class="m-auto flex justify-center items-center" 
-      style=`
+  <div
+    id="moon"
+    class="m-auto flex justify-center items-center"
+    style=`
         ${shadow ? 'box-shadow: 0px 0px .2em .1em #ffffff33;' : ''}
-        ${animate ? 'animation: move-map 60s infinite linear;' : 'background-position-x: 60%'}
-      `>
-    </div>
-    <div id="moon-shape"
-        class:list={[
-            'w-full h-full absolute top-0 left-0',
-            {
-                "rotate-[-10deg]" : !['Last quarter', 'First quarter'].includes(phaseName),
-            }
-        ]}    
-    >
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-            <filter id="dropshadow" height="130%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="2.5"/> <!-- stdDeviation is how much to blur -->
-            </filter>
-            <path d={`M 50 1 A 49,49 0
-                ${isWaning ? '0,1' : '1,0' }
-                49,99 A
-                ${percentageToRender},49
+        ${animate ? 'animation: move-map 120s infinite linear;' : 'background-position-x: 60%'}
+      `
+  >
+  </div>
+  <div
+    id="moon-shape"
+    class:list={[
+      "w-full h-full absolute top-0 left-0",
+      {
+        "rotate-[-0deg]": ![
+          PhaseName.LastQuarter,
+          PhaseName.FirstQuarter,
+        ].includes(phaseName),
+      },
+    ]}
+  >
+    <svg width="100%" height="100%" viewBox="0 0 100 100">
+      <filter id="dropshadow" height="105%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2.5"></feGaussianBlur>
+        <!-- stdDeviation is how much to blur -->
+      </filter>
+      <path
+        d={`M 50 1 A 49,49 0
+                ${isWaning ? "0,1" : "1,0"}
+                50,100 A
+                ${percentageToRender},50
                 0
-                ${(isWaning && percentage < 50) || (!isWaning && percentage > 50) ? '0,1' : '1,0' }
-                50,1`} stroke-width="0" stroke="none" fill="#000000F1" style="filter:url(#dropshadow)" />
-        </svg>
-    </div>
+                ${(isWaning && percentage < 50) || (!isWaning && percentage > 50) ? "0,1" : "1,0"}
+                50,1`}
+        stroke-width="0"
+        stroke="none"
+        fill="#000000F1"
+        style="filter:url(#dropshadow)"></path>
+    </svg>
+  </div>
 </figure>
 
-
 <style>
-
-#moon {
+  #moon {
     width: 100%;
     height: 100%;
     background-image: url("/moon.webp");
@@ -54,43 +74,46 @@ const percentageToRender = ['New Moon', 'Full moon'].includes(phaseName) ? 50 : 
     background-size: 250% auto;
     border-radius: 50%;
     transform: rotate(170deg);
-}
-
-#moon:before {
-  content: "";
-  position: absolute;
-  top: 5%;
-  left: 5%;
-  width: 90%;
-  height: 90%;
-  border-radius: 50%;
-  z-index: 2;
-}
-
-@keyframes animation {
-  to {
-    background-position-x: right;
   }
-}
 
-#moon .shadow {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-}
+  #moon:before {
+    content: "";
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    height: 90%;
+    border-radius: 50%;
+    z-index: 2;
+  }
 
-.stage {
-  width: 100%;
-  display: inline-block;
-  perspective: 400%;
-  perspective-origin: 50% 50%;
-}
+  @keyframes animation {
+    to {
+      background-position-x: right;
+    }
+  }
 
-@keyframes move-map {
-  0% {
-    background-position-x: -67%; }
+  #moon .shadow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
 
-  100% {
-    background-position-x: 100%; } }
+  .stage {
+    width: 100%;
+    display: inline-block;
+    perspective: 400%;
+    perspective-origin: 50% 50%;
+  }
+
+  @keyframes move-map {
+    0% {
+      background-position-x: -67%;
+    }
+
+    100% {
+      background-position-x: 100%;
+    }
+  }
 </style>

@@ -12,7 +12,7 @@
 		<meta property="og:title" content="Magic Moon">
 		<meta property="og:description" content="Magic Moon is a simple, beautiful, and free moon phase calendar.">
 	</head>
-	<body>
+	<body transition:animate="fade">
 		<script type="text/javascript">
 			const today = new Date();
             fetch(`/day/${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}/index.html`)

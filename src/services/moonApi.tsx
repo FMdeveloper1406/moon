@@ -13,7 +13,8 @@
 // }
 
 import moonData from "@/services/moonData.json"
+import type { MoonData } from "@/utils/types.utils";
 
 export async function getMoonData({ month, year } : { month: number, year: number }) {
-    return (moonData as any)[String(year) as '2023' | '2024' | '2025'][month - 1];
+    return (moonData[String(year) as '2023' | '2024' | '2025'] as MoonData[])[month - 1];
 }

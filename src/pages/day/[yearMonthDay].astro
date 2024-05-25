@@ -1,91 +1,123 @@
 ---
 import type { GetStaticPaths } from "astro";
-import Layout from '@/layouts/Layout.astro';
-import Moon from '@/components/Moon.astro';
-import { getMoonData } from '@/services/moonApi';
+import Layout from "@/layouts/Layout.astro";
+import Moon from "@/components/Moon.astro";
+import { getMoonData } from "@/services/moonApi";
 
-const yearMonthDay = (Astro.params as any).yearMonthDay;
+const yearMonthDay = Astro.params.yearMonthDay;
 
-const [year, month, day] = yearMonthDay?.split('-').map(Number) || [new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()];
+let [year, month, day] = yearMonthDay.split("-").map(Number) || [
+  new Date().getFullYear(),
+  new Date().getMonth() + 1,
+  new Date().getDate(),
+];
 
-const moonData = await getMoonData({ year, month })
+const moonData = await getMoonData({ year, month });
 
 const todayMoon = moonData.phase[String(day)];
 
-const date = new Date(year, month - 1, day);
+const timeEvent = moonData.phase[String(day)].timeEvent;
+const hours = timeEvent ? Number(timeEvent.split(":")[0]) - 8 : 0;
+const minutes = timeEvent ? Number(timeEvent.split(":")[1]) : 0;
 
-const phaseLimits = Object.entries(moonData.phase).filter(
-	([monthDay, phase]) => ['New Moon', 'First quarter', 'Full moon', 'Last quarter'].includes((phase as any).phaseName)
+const date = new Date(
+  year,
+  month - 1,
+  hours < 0 ? day + 1 : day,
+  hours,
+  minutes
 );
 
+const phaseLimits = Object.entries(moonData.phase).filter(
+  ([, phase]) => phase.isPhaseLimit
+);
+
+// Paths will look like /day/2023-1-1 for 2023, 2024 and 2025 years for now
 export const getStaticPaths = (() => {
-	const years = [2023, 2024, 2025];
+  const years = [2023, 2024, 2025];
 
-	const paths = years.map(year => Array.from({ length: 12 }, (_, i) => {
-		const month = i + 1;
-		const daysInMonth = new Date(year, month, 0).getDate();
+  const paths = years
+    .map((year) =>
+      Array.from({ length: 12 }, (_, i) => {
+        const month = i + 1;
+        const daysInMonth = new Date(year, month, 0).getDate();
 
-		return Array.from({ length: daysInMonth }, (_, i) => {
-			const day = i + 1;
-			return {
-				params: {
-					yearMonthDay: `${year}-${month}-${day}`
-				}
-			}
-		});
-	}).flat()).flat();
-	return paths;
+        return Array.from({ length: daysInMonth }, (_, i) => {
+          const day = i + 1;
+          return {
+            params: {
+              yearMonthDay: `${year}-${month}-${day}`,
+            },
+          };
+        });
+      }).flat()
+    )
+    .flat();
+  return paths;
 }) satisfies GetStaticPaths;
 ---
 
-<Layout title="Magic Moon">
-	<section class="w-full h-[100dvh] flex flex-col justify-center items-center" transition:animate="fade">
-		<header class="absolute top-0 w-full left-0 justify-center flex">
-			<div class="flex justify-between px-4 py-3 max-w-[1000px] w-full">
-				<h2 class="text-white text-2xl">
-					Magic Moon
-				</h2>
-				<a href={`/month/${year}-${month}`} class="text-white text-sm py-1 px-3 ring-white ring-1 rounded-md h-auto my-auto">
-					View month
-				</a>
-			</div>
-		</header>
-		<main class="w-full flex justify-center items-center flex-col">
-			<h2 class="text-white text-2xl">
-				{date.toLocaleDateString('en-US', { day: 'numeric', month: 'short',})}
-			</h2>
-			<div class="w-3/5 max-w-[500px] relative">
-				<Moon phaseName={todayMoon.phaseName} percentage={todayMoon.lighting} shadow={true} animate={true} />
-			</div>	
-			<h1 class="text-white text-4xl my-5">
-				{todayMoon.phaseName}
-				<span class="text-xl text-gray-500">
-					| {Math.floor(todayMoon.lighting)}%
-				</span>
-			</h1>
-			<h2>
-
-			</h2>
-		</main>
-		<footer class="flex justify-center w-full">
-			<div class="grid grid-cols-4 gap-2 p-2 w-full max-w-[300px]">
-				{(phaseLimits as any[]).map(([monthDay, phase]: any) => (
-					<a 
-						class="ring-gray-500/30 ring-1 rounded text-white/40 flex flex-col justify-center items-center"
-						href={`/day/${year}-${month}-${monthDay}`}>
-						<span>
-							{monthDay}
-						</span>
-						<div class="w-4/5 max-w-[500px]" >
-							<Moon phaseName={phase.phaseName} percentage={phase.lighting} />
-						</div>	
-						<span class="text-center leading-4 capitalize mb-2 text-sm px-2">
-							{phase.phaseName}
-						</span>
-					</a>
-				))}
-			</div>
-		</footer>
-
-	</section>
+<Layout title="Magic Moon" transition:persist>
+  <section
+    class="w-full h-[100dvh] flex flex-col justify-center items-center"
+    transition:animate="fade"
+  >
+    <header class="absolute top-0 w-full left-0 justify-center flex">
+      <div class="flex justify-between px-4 py-3 max-w-[1000px] w-full">
+        <h2 class="text-white text-2xl">Magic Moon</h2>
+        <a
+          href={`/month/${year}-${month}`}
+          class="text-white text-sm py-1 px-3 ring-white ring-1 rounded-md h-auto my-auto"
+        >
+          View month
+        </a>
+      </div>
+    </header>
+    <main class="w-full flex justify-center items-center flex-col">
+      <div class="w-3/5 max-w-[500px] relative">
+        <Moon
+          phaseName={todayMoon.phaseName}
+          percentage={todayMoon.lighting}
+          shadow={true}
+          animate={true}
+        />
+      </div>
+      <h1 class="text-white text-2xl">
+        {date.toLocaleDateString("en-US", { day: "numeric", month: "long" })}
+        {
+          todayMoon.timeEvent && (
+            <span class="text-gray-500 text-sm">
+              {date.toTimeString().slice(0, 5)}
+            </span>
+          )
+        }
+      </h1>
+      <h2 class="text-white text-4xl my-5">
+        {todayMoon.phaseName}
+        <span class="text-xl text-gray-500">
+          | {Math.floor(todayMoon.lighting)}%
+        </span>
+      </h2>
+    </main>
+    <footer class="flex justify-center w-full">
+      <div class="grid grid-cols-4 gap-2 p-2 w-full max-w-[300px]">
+        {
+          phaseLimits.map(([monthDay, phase]) => (
+            <a
+              class="ring-gray-500/30 ring-1 rounded text-white/40 flex flex-col justify-center items-center"
+              href={`/day/${year}-${month}-${monthDay}`}
+            >
+              <span>{monthDay}</span>
+              <div class="w-4/5 max-w-[500px]">
+                <Moon phaseName={phase.phaseName} percentage={phase.lighting} />
+              </div>
+              <span class="text-center leading-4 capitalize mb-2 text-sm px-2">
+                {phase.phaseName}
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </footer>
+  </section>
 </Layout>
