@@ -108,14 +108,14 @@ export const getStaticPaths = (() => {
         {
           phaseLimits.map(([monthDay, phase]) => (
             <a
-              class="ring-gray-500/30 ring-1 rounded text-white/50 flex flex-col justify-center items-center"
+              class="ring-gray-500/30 ring-1 rounded text-white/50 flex flex-col items-center"
               href={`/day/${year}-${month}-${monthDay}`}
             >
               <span>{monthDay}</span>
               <div class="w-4/5 max-w-[500px]">
                 <Moon phaseName={phase.phaseName} percentage={phase.lighting} />
               </div>
-              <span class="text-center leading-4 capitalize mb-2 text-xs px-2">
+              <span class="text-center leading-4 capitalize mb-2 text-xs px-4">
                 {i18n["es"][phase.phaseName]}
               </span>
             </a>
@@ -123,7 +123,7 @@ export const getStaticPaths = (() => {
         }
       </div>
     </main>
-    <footer class="flex justify-center w-full text-white/35 text-sm py-2">
+    <footer class="flex justify-center w-full text-white/35 text-xs py-2">
       By &nbsp;<a href="https://github.com/wbenafi" target="_blank" class="text-white/50 font-semibold hover:text-white/60">Walter Benavides</a>
     </footer>
   </section>
