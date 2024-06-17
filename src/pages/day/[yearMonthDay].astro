@@ -3,6 +3,7 @@ import type { GetStaticPaths } from "astro";
 import Layout from "@/layouts/Layout.astro";
 import Moon from "@/components/Moon.astro";
 import { getMoonData } from "@/services/moonApi";
+import { i18n } from "@/utils/i18n.utils";
 
 const yearMonthDay = Astro.params.yearMonthDay;
 
@@ -59,17 +60,19 @@ export const getStaticPaths = (() => {
 
 <Layout title="Magic Moon" transition:persist>
   <section
-    class="w-full h-[100dvh] flex flex-col justify-center items-center"
+    class="w-full h-[100dvh] flex flex-col justify-between items-center"
     transition:animate="fade"
   >
-    <header class="absolute top-0 w-full left-0 justify-center flex">
+    <header class="sticky top-0 w-full left-0 justify-center flex">
       <div class="flex justify-between px-4 py-3 max-w-[1000px] w-full">
-        <h2 class="text-white text-2xl">Magic Moon</h2>
+        <a href="/">
+          <h2 class="text-white text-2xl">Magic Moon</h2>
+        </a>
         <a
           href={`/month/${year}-${month}`}
           class="text-white text-sm py-1 px-3 ring-white ring-1 rounded-md h-auto my-auto"
         >
-          View month
+          {i18n["es"].viewMonth}
         </a>
       </div>
     </header>
@@ -83,41 +86,45 @@ export const getStaticPaths = (() => {
         />
       </div>
       <h1 class="text-white text-2xl">
-        {date.toLocaleDateString("en-US", { day: "numeric", month: "long" })}
+        {date.toLocaleDateString("es-US", { day: "numeric", month: "long" })}
         {
           todayMoon.timeEvent && (
             <span class="text-gray-500 text-sm">
-              {date.toTimeString().slice(0, 5)}
+              {date.toLocaleTimeString("es-US", {
+                hour: "numeric",
+                minute: "numeric",
+              })}
             </span>
           )
         }
       </h1>
       <h2 class="text-white text-4xl my-5">
-        {todayMoon.phaseName}
-        <span class="text-xl text-gray-500">
+        {i18n["es"][todayMoon.phaseName]}
+        <span class="text-xl text-white/50">
           | {Math.floor(todayMoon.lighting)}%
         </span>
       </h2>
-    </main>
-    <footer class="flex justify-center w-full">
-      <div class="grid grid-cols-4 gap-2 p-2 w-full max-w-[300px]">
+      <div class="grid grid-cols-4 gap-2 p-2 w-full max-w-[350px]">
         {
           phaseLimits.map(([monthDay, phase]) => (
             <a
-              class="ring-gray-500/30 ring-1 rounded text-white/40 flex flex-col justify-center items-center"
+              class="ring-gray-500/30 ring-1 rounded text-white/50 flex flex-col justify-center items-center"
               href={`/day/${year}-${month}-${monthDay}`}
             >
               <span>{monthDay}</span>
               <div class="w-4/5 max-w-[500px]">
                 <Moon phaseName={phase.phaseName} percentage={phase.lighting} />
               </div>
-              <span class="text-center leading-4 capitalize mb-2 text-sm px-2">
-                {phase.phaseName}
+              <span class="text-center leading-4 capitalize mb-2 text-xs px-2">
+                {i18n["es"][phase.phaseName]}
               </span>
             </a>
           ))
         }
       </div>
+    </main>
+    <footer class="flex justify-center w-full text-white/35 text-sm py-2">
+      By &nbsp;<a href="https://github.com/wbenafi" target="_blank" class="text-white/50 font-semibold hover:text-white/60">Walter Benavides</a>
     </footer>
   </section>
 </Layout>

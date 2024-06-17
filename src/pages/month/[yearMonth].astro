@@ -3,6 +3,8 @@ import type { GetStaticPaths } from "astro";
 import Layout from "@/layouts/Layout.astro";
 import Moon from "@/components/Moon.astro";
 import { getMoonData } from "@/services/moonApi";
+import { i18n } from "@/utils/i18n.utils";
+import type { NameDay } from "@/utils/types.utils";
 
 const years = [2023, 2024, 2025];
 
@@ -18,8 +20,8 @@ const moonData = await getMoonData({ year, month });
 const nextMonth = month === 12 ? 1 : month + 1;
 const previousMonth = month === 1 ? 12 : month - 1;
 
-const nextMonthName = moonData.nameMonth[nextMonth - 1];
-const previousMonthName = moonData.nameMonth[previousMonth - 1];
+const nextMonthName = i18n["es"][moonData.nameMonth[nextMonth - 1]];
+const previousMonthName = i18n["es"][moonData.nameMonth[previousMonth - 1]];
 
 const nextYear = nextMonth === 1 && years.includes(year + 1) ? year + 1 : year;
 const previousYear =
@@ -46,68 +48,76 @@ export const getStaticPaths = (() => {
 
 <Layout title="Magic Moon" transition:persist>
   <section
-    class="w-full h-[100dvh] flex justify-center items-center flex-col"
+    class="w-full h-[100dvh] flex justify-between items-center flex-col"
     transition:animate="fade"
   >
-    <header class="absolute top-0 w-full left-0 justify-center flex">
+    <header class="sticky top-0 w-full left-0 justify-center flex">
       <div class="flex justify-between px-4 py-3 max-w-[1000px] w-full">
-        <h2 class="text-white text-2xl">Magic Moon</h2>
+        <a href="/">
+          <h2 class="text-white text-2xl">Magic Moon</h2>
+        </a>
       </div>
     </header>
-
-    <div
-      class="grid grid-cols-7 w-full md:w-3/5 max-w-[900px] px-5 md:px-0 md:gap-4 gap-1"
-    >
-      {
-        moonData.nameDay.map((day: string) => (
-          <div class="text-gray-400 text-center">{day.slice(0, 3)}</div>
-        ))
-      }
-      {
-        Object.entries(moonData.phase).map(([dayNumber, phase]) => (
-          <a
-            style={
-              Number(dayNumber) == 1
-                ? `grid-column-start:${phase.dayWeek + 1}`
-                : ""
-            }
-            class={`
-				rounded-lg px-1 md:py-2 flex flex-col justify-center items-center relative overflow-hidden 
-				transition-all duration-500 hover:ring-2 hover:ring-white hover:shadow-lg hover:z-10
-				${phase.isPhaseLimit ? "ring-gray-400 ring-2" : "ring-gray-800 ring-1"}
-			`}
-            href={`/day/${year}-${month}-${dayNumber}`}
-          >
-            <div class="w-full flex justify-end md:mr-4 mr-1 md:-mb-1">
-              <span class="text-white font-bold md:text-lg">{dayNumber}</span>
-            </div>
-            <div class="md:w-3/4 relative w-full">
-              <Moon phaseName={phase.phaseName} percentage={phase.lighting} />
-            </div>
-          </a>
-        ))
-      }
-    </div>
-
-    <div class="flex justify-around w-full max-w-[900px] items-center mt-10">
-      <a
-        href={`/month/${previousYear}-${previousMonth}`}
-        class="text-gray-500 md:text-2xl text-sm transition-all md:hover:text-3xl duration-500"
+    <main class="w-full">
+      <div
+        class="grid grid-cols-7 w-full md:w-3/5 max-w-[900px] px-4 md:px-0 md:gap-4 gap-2"
       >
-        {previousMonthName}
-        {previousMonth == 12 ? previousYear : ""}
-      </a>
-      <h1 class="text-white md:text-6xl text-2xl z-10">
-        {moonData.monthName}
-        {month == 12 || month == 1 ? year : ""}
-      </h1>
-      <a
-        href={`/month/${nextYear}-${nextMonth}`}
-        class="text-gray-500 md:text-2xl text-sm transition-all md:hover:text-3xl duration-500"
-      >
-        {nextMonthName}
-        {nextMonth == 1 ? nextYear : ""}
-      </a>
-    </div>
+        {
+          moonData.nameDay.map((day: NameDay) => (
+            <div class="text-white/40 text-center">
+              {i18n["es"][day].slice(0, 3)}
+            </div>
+          ))
+        }
+        {
+          Object.entries(moonData.phase).map(([dayNumber, phase]) => (
+            <a
+              style={
+                Number(dayNumber) == 1
+                  ? `grid-column-start:${phase.dayWeek + 1}`
+                  : ""
+              }
+              class={`
+          rounded-lg px-0.5 md:py-2 flex flex-col justify-center items-center relative overflow-hidden 
+          transition-all duration-500 hover:ring-2 hover:ring-white hover:shadow-lg hover:z-10
+          ${phase.isPhaseLimit ? "ring-gray-400 ring-2" : "ring-gray-800 ring-1"}
+        `}
+              href={`/day/${year}-${month}-${dayNumber}`}
+            >
+              <div class="w-full flex justify-end md:mr-4 mr-1 md:-mb-1">
+                <span class="text-white font-bold md:text-lg">{dayNumber}</span>
+              </div>
+              <div class="md:w-3/4 relative w-full">
+                <Moon phaseName={phase.phaseName} percentage={phase.lighting} />
+              </div>
+            </a>
+          ))
+        }
+      </div>
+  
+      <div class="flex justify-around w-full max-w-[900px] items-center mt-10">
+        <a
+          href={`/month/${previousYear}-${previousMonth}`}
+          class="text-white/50 md:text-2xl text-sm transition-all md:hover:text-3xl duration-500"
+        >
+          {previousMonthName}
+          {previousMonth == 12 ? previousYear : ""}
+        </a>
+        <h1 class="text-white md:text-6xl text-2xl z-10">
+          {i18n["es"][moonData.monthName]}
+          {month == 12 || month == 1 ? year : ""}
+        </h1>
+        <a
+          href={`/month/${nextYear}-${nextMonth}`}
+          class="text-white/50 md:text-2xl text-sm transition-all md:hover:text-3xl duration-500"
+        >
+          {nextMonthName}
+          {nextMonth == 1 ? nextYear : ""}
+        </a>
+      </div>
+    </main>
+    <footer class="flex justify-center w-full text-white/35 text-sm py-2">
+      By &nbsp;<a href="https://github.com/wbenafi" target="_blank" class="text-white/50 font-semibold hover:text-white/60">Walter Benavides</a>
+    </footer>
   </section>
 </Layout>
