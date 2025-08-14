@@ -2,7 +2,7 @@
 import { PhaseName } from "@/utils/types.utils";
 
 interface Props {
-  phaseName: PhaseName;   // tu enum
+  phaseName: PhaseName;   // enum propio
   percentage: number;     // 0..100
   shadow?: boolean;
   animate?: boolean;
@@ -10,7 +10,7 @@ interface Props {
 
 const { phaseName, percentage, shadow, animate } = Astro.props;
 
-// Mantengo tu lógica para el “grosor” de la sombra
+// Mantengo tu lógica para ancho del terminador
 const isWaning = [
   PhaseName.Waning,
   PhaseName.LastQuarter,
@@ -31,7 +31,7 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     } ${animate ? 'animation: move-map 120s infinite linear;' : 'background-position-x: 60%'}`}
   ></div>
 
-  <!-- contenedor que rotamos dinámicamente con el ángulo real -->
+  <!-- Contenedor que rotamos dinámicamente -->
   <div
     id="moon-shape"
     class:list={[
@@ -61,7 +61,6 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
   </div>
 </figure>
 
-<!-- Info debajo: fase, porcentaje, rise/set (dependen de ubicación) -->
 <section class="info">
   <div class="row">
     <span class="phase" id="moonPhaseTxt">{String(phaseName)}</span>
@@ -69,14 +68,19 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
   </div>
   <div class="sub" id="moonTimes">Rise — / Set —</div>
   <div class="tiny" id="moonLocHint">Using your location if permitted.</div>
+
+  <!-- Próximas fases -->
+  <div class="list">
+    <div class="list-title">Next phases</div>
+    <ul id="nextPhases" class="ul"></ul>
+  </div>
 </section>
 
 <style>
   .stage { width: 100%; display: inline-block; perspective: 400%; perspective-origin: 50% 50%; }
   #moon {
-    width: 100%;
-    height: 100%;
-    background-image: url("/moon.webp"); /* asegúrate que exista */
+    width: 100%; height: 100%;
+    background-image: url("/moon.webp");
     background-position-y: center;
     background-size: 250% auto;
     border-radius: 50%;
@@ -88,25 +92,31 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
   .pct { font-size: 16px; opacity: .85; margin-left: 8px; }
   .sub { margin-top: 6px; font-size: 14px; color: #a5b4fc; }
   .tiny { margin-top: 4px; font-size: 12px; color: #94a3b8; }
+
+  .list { margin: 14px auto 0; max-width: 560px; background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:10px 12px; }
+  .list-title { color:#93c5fd; font-weight:800; font-size:14px; margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px; }
+  .ul { list-style:none; padding:0; margin:0; display:grid; grid-template-columns: 1fr 1fr; gap:6px 12px; }
+  .ul li { display:flex; justify-content:space-between; font-size:14px; background:#0f172a; border:1px solid #1f2937; border-radius:10px; padding:8px 10px; }
+  .ul .label { color:#c7d2fe; font-weight:700; }
+  .ul .value { color:#e5e7eb; font-variant-numeric: tabular-nums; }
 </style>
 
 <script client:load>
   import SunCalc from 'suncalc';
 
-  const shape = document.getElementById('moon-shape');
+  const shape   = document.getElementById('moon-shape');
   const timesEl = document.getElementById('moonTimes');
   const hintEl  = document.getElementById('moonLocHint');
+  const listEl  = document.getElementById('nextPhases');
 
   function setRotationAndTimes(lat = 0, lon = 0) {
     const now = new Date();
-    const ill = SunCalc.getMoonIllumination(now);        // { fraction, phase, angle }
-    const pos = SunCalc.getMoonPosition(now, lat, lon);  // { parallacticAngle, ... }
+    const ill = SunCalc.getMoonIllumination(now);
+    const pos = SunCalc.getMoonPosition(now, lat, lon);
     const angleRad = -(pos.parallacticAngle + ill.angle);
     const angleDeg = angleRad * 180 / Math.PI;
-
     if (shape) shape.style.transform = `rotate(${angleDeg}deg)`;
 
-    // Rise/Set (pueden ser null en latitudes altas)
     try {
       const mt = SunCalc.getMoonTimes(now, lat, lon);
       const riseTxt = mt.rise ? new Date(mt.rise).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -117,17 +127,90 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     }
   }
 
-  function init(lat = 0, lon = 0, usedGeo = false) {
+  // ---- Próximas fases (búsqueda numérica rápida, sin API) ----
+  // Fases objetivo: 0 (New), 0.25 (First), 0.5 (Full), 0.75 (Last)
+  const TARGETS = [
+    { key: 'New Moon',        value: 0.0 },
+    { key: 'First Quarter',   value: 0.25 },
+    { key: 'Full Moon',       value: 0.5 },
+    { key: 'Last Quarter',    value: 0.75 },
+  ];
+
+  // Encuentra la próxima fecha donde la fase ≈ target en los próximos ~60 días
+  async function findNextPhaseDates(lat, lon) {
+    const out = [];
+    const start = new Date();
+
+    for (const t of TARGETS) {
+      let best = null;
+      // 1) barrido diario para encontrar el día más cercano
+      let minErr = 1e9;
+      let candidate = new Date(start);
+      for (let d = 0; d < 60; d++) {
+        const test = new Date(start.getTime() + d * 86400000);
+        // muestreamos 4 veces en el día
+        for (let h = 0; h < 24; h += 6) {
+          const dt = new Date(test.getFullYear(), test.getMonth(), test.getDate(), h);
+          const phase = SunCalc.getMoonIllumination(dt).phase; // 0..1
+          const err = Math.min(Math.abs(phase - t.value), 1 - Math.abs(phase - t.value)); // circular
+          if (err < minErr) { minErr = err; candidate = dt; }
+        }
+      }
+      // 2) afinado binario +/- 36h
+      let lo = new Date(candidate.getTime() - 36 * 3600 * 1000);
+      let hi = new Date(candidate.getTime() + 36 * 3600 * 1000);
+      for (let i = 0; i < 22; i++) { // ~ microseg exactitud
+        const mid = new Date((lo.getTime() + hi.getTime()) / 2);
+        const phase = SunCalc.getMoonIllumination(mid).phase;
+        const errMid = wrapErr(phase - t.value);
+        const errLo  = wrapErr(SunCalc.getMoonIllumination(lo).phase - t.value);
+        // decide lado
+        if (Math.abs(errLo) < Math.abs(errMid)) hi = mid; else lo = mid;
+      }
+      best = new Date((lo.getTime() + hi.getTime()) / 2);
+      out.push({ label: t.key, date: best });
+    }
+    return out.sort((a,b) => a.date.getTime() - b.date.getTime());
+  }
+  function wrapErr(x) { // error circular para fase (0..1)
+    x = ((x % 1) + 1) % 1;
+    return x > 0.5 ? x - 1 : x;
+  }
+
+  function renderNextPhases(list) {
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    list.slice(0, 4).forEach(item => {
+      const li = document.createElement('li');
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = item.label;
+
+      const val = document.createElement('span');
+      val.className = 'value';
+      val.textContent = item.date.toLocaleString([], { month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+
+      li.appendChild(label);
+      li.appendChild(val);
+      listEl.appendChild(li);
+    });
+  }
+
+  async function init(lat = 0, lon = 0, usedGeo = false) {
     setRotationAndTimes(lat, lon);
     if (hintEl) hintEl.textContent = usedGeo ? 'Using your location.' : 'Using a generic orientation.';
-    // refresca cada 10 min
+    // refresca giro/rise-set cada 10 min
     setInterval(() => setRotationAndTimes(lat, lon), 10 * 60 * 1000);
+
+    // cargar próximas fases (no dependen de lat/lon, pero las calculamos igual aquí)
+    const phases = await findNextPhaseDates(lat, lon);
+    renderNextPhases(phases);
   }
 
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (pos) => init(pos.coords.latitude, pos.coords.longitude, true),
-      ()    => init(), // denegado → orientación genérica
+      ()    => init(),
       { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 }
     );
   } else {
