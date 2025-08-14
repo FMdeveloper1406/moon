@@ -102,8 +102,6 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
 </style>
 
 <script is:client="load">
-// ...
-</script>
   import SunCalc from 'suncalc';
 
   const shape   = document.getElementById('moon-shape');
@@ -129,8 +127,7 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     }
   }
 
-  // ---- Próximas fases (búsqueda numérica rápida, sin API) ----
-  // Fases objetivo: 0 (New), 0.25 (First), 0.5 (Full), 0.75 (Last)
+  // ---- Próximas fases (sin API) ----
   const TARGETS = [
     { key: 'New Moon',        value: 0.0 },
     { key: 'First Quarter',   value: 0.25 },
@@ -138,45 +135,43 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     { key: 'Last Quarter',    value: 0.75 },
   ];
 
-  // Encuentra la próxima fecha donde la fase ≈ target en los próximos ~60 días
-  async function findNextPhaseDates(lat, lon) {
+  function wrapErr(x) { // error circular para fase (0..1)
+    x = ((x % 1) + 1) % 1;
+    return x > 0.5 ? x - 1 : x;
+  }
+
+  async function findNextPhaseDates() {
     const out = [];
     const start = new Date();
 
     for (const t of TARGETS) {
-      let best = null;
-      // 1) barrido diario para encontrar el día más cercano
+      let best;
       let minErr = 1e9;
       let candidate = new Date(start);
+      // 1) barrido diario (60 días), 4 muestras por día
       for (let d = 0; d < 60; d++) {
         const test = new Date(start.getTime() + d * 86400000);
-        // muestreamos 4 veces en el día
         for (let h = 0; h < 24; h += 6) {
           const dt = new Date(test.getFullYear(), test.getMonth(), test.getDate(), h);
-          const phase = SunCalc.getMoonIllumination(dt).phase; // 0..1
-          const err = Math.min(Math.abs(phase - t.value), 1 - Math.abs(phase - t.value)); // circular
+          const phase = SunCalc.getMoonIllumination(dt).phase;
+          const err = Math.min(Math.abs(phase - t.value), 1 - Math.abs(phase - t.value));
           if (err < minErr) { minErr = err; candidate = dt; }
         }
       }
       // 2) afinado binario +/- 36h
       let lo = new Date(candidate.getTime() - 36 * 3600 * 1000);
       let hi = new Date(candidate.getTime() + 36 * 3600 * 1000);
-      for (let i = 0; i < 22; i++) { // ~ microseg exactitud
+      for (let i = 0; i < 22; i++) {
         const mid = new Date((lo.getTime() + hi.getTime()) / 2);
-        const phase = SunCalc.getMoonIllumination(mid).phase;
-        const errMid = wrapErr(phase - t.value);
+        const phaseMid = SunCalc.getMoonIllumination(mid).phase;
+        const errMid = wrapErr(phaseMid - t.value);
         const errLo  = wrapErr(SunCalc.getMoonIllumination(lo).phase - t.value);
-        // decide lado
         if (Math.abs(errLo) < Math.abs(errMid)) hi = mid; else lo = mid;
       }
       best = new Date((lo.getTime() + hi.getTime()) / 2);
       out.push({ label: t.key, date: best });
     }
     return out.sort((a,b) => a.date.getTime() - b.date.getTime());
-  }
-  function wrapErr(x) { // error circular para fase (0..1)
-    x = ((x % 1) + 1) % 1;
-    return x > 0.5 ? x - 1 : x;
   }
 
   function renderNextPhases(list) {
@@ -204,8 +199,7 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     // refresca giro/rise-set cada 10 min
     setInterval(() => setRotationAndTimes(lat, lon), 10 * 60 * 1000);
 
-    // cargar próximas fases (no dependen de lat/lon, pero las calculamos igual aquí)
-    const phases = await findNextPhaseDates(lat, lon);
+    const phases = await findNextPhaseDates();
     renderNextPhases(phases);
   }
 
