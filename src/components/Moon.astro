@@ -101,7 +101,9 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
   .ul .value { color:#e5e7eb; font-variant-numeric: tabular-nums; }
 </style>
 
-<script client:load>
+<script is:client="load">
+// ...
+</script>
   import SunCalc from 'suncalc';
 
   const shape   = document.getElementById('moon-shape');
