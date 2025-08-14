@@ -10,7 +10,11 @@ interface Props {
 
 const { phaseName, percentage, shadow, animate } = Astro.props;
 
-const isWaning = [PhaseName.Waning, PhaseName.LastQuarter, PhaseName.NewMoon].includes(phaseName);
+const isWaning = [
+  PhaseName.Waning,
+  PhaseName.LastQuarter,
+  PhaseName.NewMoon,
+].includes(phaseName);
 const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phaseName)
   ? 50
   : Math.floor(Number(percentage) - 50) * 0.84 + 0.16;
@@ -24,8 +28,8 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
       ${shadow ? 'box-shadow: 0px 0px .2em .1em #ffffff33;' : ''}
       ${animate ? 'animation: move-map 120s infinite linear;' : 'background-position-x: 60%'}
     `}
-  ></div>
-
+  >
+  </div>
   <div
     id="moon-shape"
     class:list={[
@@ -49,8 +53,7 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
         stroke-width="0"
         stroke="none"
         fill="#000000F1"
-        style="filter:url(#dropshadow)"
-      ></path>
+        style="filter:url(#dropshadow)"></path>
     </svg>
   </div>
 </figure>
@@ -94,7 +97,12 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
 
   #moon .shadow { position: absolute; width: 100%; height: 100%; z-index: -1; }
 
-  .stage { width: 100%; display: inline-block; perspective: 400%; perspective-origin: 50% 50%; }
+  .stage {
+    width: 100%;
+    display: inline-block;
+    perspective: 400%;
+    perspective-origin: 50% 50%;
+  }
 
   @keyframes move-map {
     0% { background-position-x: -67%; }
@@ -115,15 +123,15 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
   .ul .value { color:#e5e7eb; font-variant-numeric: tabular-nums; }
 </style>
 
-<script>
+<script lang="ts">
   import SunCalc from 'suncalc';
 
-  const shape   = document.getElementById('moon-shape');
-  const timesEl = document.getElementById('moonTimes');
-  const hintEl  = document.getElementById('moonLocHint');
-  const listEl  = document.getElementById('nextPhases');
+  const shape   = document.getElementById('moon-shape') as HTMLElement | null;
+  const timesEl = document.getElementById('moonTimes') as HTMLElement | null;
+  const hintEl  = document.getElementById('moonLocHint') as HTMLElement | null;
+  const listEl  = document.getElementById('nextPhases') as HTMLElement | null;
 
-  function setRotationAndTimes(lat = 0, lon = 0) {
+  function setRotationAndTimes(lat: number = 0, lon: number = 0) {
     const now = new Date();
     const ill = SunCalc.getMoonIllumination(now);
     const pos = SunCalc.getMoonPosition(now, lat, lon);
@@ -146,15 +154,15 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     { key: 'First Quarter',   value: 0.25 },
     { key: 'Full Moon',       value: 0.5 },
     { key: 'Last Quarter',    value: 0.75 },
-  ];
+  ] as const;
 
-  function wrapErr(x) {
+  function wrapErr(x: number): number {
     x = ((x % 1) + 1) % 1;
     return x > 0.5 ? x - 1 : x;
   }
 
-  async function findNextPhaseDates() {
-    const out = [];
+  async function findNextPhaseDates(): Promise<Array<{ label: string; date: Date }>> {
+    const out: Array<{ label: string; date: Date }> = [];
     const start = new Date();
 
     for (const t of TARGETS) {
@@ -187,10 +195,10 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     return out.sort((a,b) => a.date.getTime() - b.date.getTime());
   }
 
-  function renderNextPhases(list) {
+  function renderNextPhases(list: Array<{ label: string; date: Date }>): void {
     if (!listEl) return;
     listEl.innerHTML = '';
-    list.slice(0, 4).forEach(item => {
+    list.slice(0, 4).forEach((item: { label: string; date: Date }) => {
       const li = document.createElement('li');
       const label = document.createElement('span');
       label.className = 'label';
@@ -206,7 +214,7 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     });
   }
 
-  async function init(lat = 0, lon = 0, usedGeo = false) {
+  async function init(lat: number = 0, lon: number = 0, usedGeo: boolean = false) {
     setRotationAndTimes(lat, lon);
     if (hintEl) hintEl.textContent = usedGeo ? 'Using your location.' : 'Using a generic orientation.';
     setInterval(() => setRotationAndTimes(lat, lon), 10 * 60 * 1000);
@@ -215,7 +223,7 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     renderNextPhases(phases);
   }
 
-  if (navigator.geolocation) {
+  if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       (pos) => init(pos.coords.latitude, pos.coords.longitude, true),
       ()    => init(),
@@ -225,3 +233,4 @@ const percentageToRender = [PhaseName.NewMoon, PhaseName.FullMoon].includes(phas
     init();
   }
 </script>
+
